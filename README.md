@@ -1,3 +1,13 @@
+
+Azure technologies I want to be using
+
+- Github actions
+- Azure Static Web Apps
+- Azure AD B2C
+- Azure functions
+- Azure Table Storage
+- ARM
+
 # Vue Basic
 
 ## Project setup
