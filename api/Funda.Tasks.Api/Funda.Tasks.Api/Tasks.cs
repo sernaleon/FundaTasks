@@ -1,4 +1,3 @@
-using System;
 using System.IO;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
@@ -7,17 +6,30 @@ using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using System.Threading;
+using Funda.Tasks.Core;
+using System.Collections.Generic;
+using System;
 
 namespace Funda.Tasks.Api
 {
-    public static class Tasks
+    public class Tasks
     {
-        [FunctionName("GetTasks")]
-        public static async Task<IActionResult> Run(
-            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "tasks")] HttpRequest req,
-            ILogger log)
+        private readonly ILogger<Tasks> _log;
+        private readonly IUserTasksRepository _repo;
+
+        public Tasks(ILogger<Tasks> log, IUserTasksRepository repo)
         {
-            log.LogInformation("C# HTTP trigger function processed a request.");
+            _log = log;
+            _repo = repo;
+        }
+
+        [FunctionName("GetTasks")]
+        public async Task<IActionResult> GetTasks(
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "tasks")] HttpRequest req,
+            CancellationToken token = default)
+        {
+            _log.LogInformation("C# HTTP trigger function processed a request.");
 
             string name = req.Query["name"];
 
@@ -25,11 +37,42 @@ namespace Funda.Tasks.Api
             dynamic data = JsonConvert.DeserializeObject(requestBody);
             name = name ?? data?.name;
 
-            string responseMessage = string.IsNullOrEmpty(name)
-                ? "This HTTP triggered function executed successfully. Pass a name in the query string or in the request body for a personalized response."
-                : $"Hello, {name}. This HTTP triggered function executed successfully.";
+            var result = await _repo.GetAllUserTasksAsync(token);
 
-            return new JsonResult(new { text = responseMessage });
+            return new JsonResult(result);
+        }
+
+
+        [FunctionName("Generate")]
+        public async Task<IActionResult> Generate(
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "tasks/generate")] HttpRequest req,
+            CancellationToken token = default)
+        {
+            var userTasks = new UserTasks
+            {
+                User = new User
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Arturi"
+                },
+                Tasks = new List<TaskLine>
+                {
+                    new TaskLine
+                    {
+                        TaskType = new TaskType
+                        {
+                            Id = Guid.NewGuid(),
+                            Name = "Sacar el perro"
+                        },
+                        Description = "this",
+                        Timestamp = DateTimeOffset.Now
+                    }
+                }
+            };
+
+            await _repo.SetUserTasksAsync(userTasks, token);
+
+            return new JsonResult(userTasks);
         }
     }
 }
