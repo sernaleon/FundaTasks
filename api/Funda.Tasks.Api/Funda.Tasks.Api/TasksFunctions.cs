@@ -23,8 +23,8 @@ namespace Funda.Tasks.Api
             _tasks = tasks;
         }
 
-        [FunctionName("GetTasks")]
-        public async Task<IActionResult> GetTasks(
+        [FunctionName("TasksGet")]
+        public async Task<IActionResult> TasksGet(
             [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "tasks")] HttpRequest req,
             CancellationToken token = default)
         {
@@ -38,30 +38,21 @@ namespace Funda.Tasks.Api
         }
 
 
-        [FunctionName("Generate")]
-        public async Task<IActionResult> Generate(
-            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "tasks/generate")] HttpRequest req,
+        [FunctionName("TasksAdd")]
+        public async Task<IActionResult> TasksAdd(
+            [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "tasks")] HttpRequest req,
             CancellationToken token = default)
         {
+            _log.LogInformation("C# HTTP trigger function processed a request.");
+
             var userId = new Guid("c54033a9-3dc3-472b-9008-cd4a4cae2a06");
 
-            var task = new TaskType
-            {
-                Id = new Guid("c54033a9-3dc3-472b-9008-cd4a4cae2a07"),
-                Name = "Hacer cosas"
-            };
+            var taskLine = await req.GetBodyAsync<TaskLineItem>();
 
-            var taskLine = new TaskLineItem
-            {
-                Id = new Guid("c54033a9-3dc3-472b-9008-cd4a4cae2a08"),
-                Task = task,
-                Description = "Hoy he hecho caca. Mucha."
-            };
-
-            await _tasks.AddTaskAsync(userId, task, token);
+            await _tasks.AddTaskAsync(userId, taskLine.Task, token);
             await _userTasks.SetUserTasksAsync(userId, taskLine, token);
 
-            return new JsonResult(taskLine);
+            return new OkResult();
         }
     }
 }
