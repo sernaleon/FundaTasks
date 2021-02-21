@@ -7,6 +7,7 @@ namespace Funda.Tasks.Core
 {
     public interface ITasks
     {
-        Task<List<TaskType>> GetAllTaskTypesAsync(Guid userId, CancellationToken token);
+        Task<List<TaskType>> GetAllAsync(Guid userId, CancellationToken token);
+        Task AddTaskAsync(Guid userId, TaskType task, CancellationToken token);
     }
 }

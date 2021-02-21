@@ -4,6 +4,9 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Azure.Cosmos.Table.Queryable;
+using System.Linq.Expressions;
+using System.Collections.Generic;
 
 namespace Funda.Tasks.Infrastructure.TableStorage
 {
@@ -12,7 +15,8 @@ namespace Funda.Tasks.Infrastructure.TableStorage
         Task<T> GetAsync(string partitionKey, string rowKey, CancellationToken token);
         Task SetAsync(T userTasksEntity, CancellationToken token);
         Task DeleteAsync(T userTasksEntity, CancellationToken token);
-        Task<T[]> GetAllAsync(CancellationToken token);
+        Task<List<T>> SelectAsync(CancellationToken token);
+        Task<List<T>> SelectWhereAsync(Expression<Func<T, bool>> wherePredicate, CancellationToken token);
     }
 
     public class DbContext<T> : IDbContext<T> where T : TableEntity, new()
@@ -48,6 +52,7 @@ namespace Funda.Tasks.Infrastructure.TableStorage
         {
             try
             {
+                userTasksEntity.ETag = "*";
                 var table = CloudTableHelper.GetCloudTable(_connectionString, _tableName);
                 var operation = TableOperation.InsertOrMerge(userTasksEntity);
                 await table.ExecuteAsync(operation, token);
@@ -63,6 +68,7 @@ namespace Funda.Tasks.Infrastructure.TableStorage
         {
             try
             {
+                userTasksEntity.ETag = "*";
                 var table = CloudTableHelper.GetCloudTable(_connectionString, _tableName);
                 var operation = TableOperation.Delete(userTasksEntity);
                 await table.ExecuteAsync(operation, token);
@@ -74,14 +80,30 @@ namespace Funda.Tasks.Infrastructure.TableStorage
             }
         }
 
-        public async Task<T[]> GetAllAsync(CancellationToken token)
+        public async Task<List<T>> SelectAsync(CancellationToken token)
         {
             try
             {
                 var table = CloudTableHelper.GetCloudTable(_connectionString, _tableName);
                 var query = table.CreateQuery<T>();
                 var tableResult = await table.ExecuteQueryAsync(query, token);
-                return tableResult?.ToArray();
+                return tableResult;
+            }
+            catch (Exception e)
+            {
+                _logger.LogError($"Error getting all {nameof(T)}", e);
+                throw;
+            }
+        }
+
+        public async Task<List<T>> SelectWhereAsync(Expression<Func<T, bool>> wherePredicate, CancellationToken token)
+        {
+            try
+            {
+                var table = CloudTableHelper.GetCloudTable(_connectionString, _tableName);
+                var query = table.CreateQuery<T>().Where(wherePredicate).AsTableQuery();
+                var tableResult = await table.ExecuteQueryAsync(query, token);
+                return tableResult;
             }
             catch (Exception e)
             {

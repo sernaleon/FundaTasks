@@ -15,7 +15,7 @@ namespace Funda.Tasks.Infrastructure.TableStorage
             return tableClient.GetTableReference(tableName);
         }
 
-        public static async Task<IList<T>> ExecuteQueryAsync<T>(this CloudTable table, TableQuery<T> query, CancellationToken ct = default, Action<IList<T>> onProgress = null) where T : ITableEntity, new()
+        public static async Task<List<T>> ExecuteQueryAsync<T>(this CloudTable table, TableQuery<T> query, CancellationToken ct = default, Action<IList<T>> onProgress = null) where T : ITableEntity, new()
         {
             var items = new List<T>();
             TableContinuationToken token = null;

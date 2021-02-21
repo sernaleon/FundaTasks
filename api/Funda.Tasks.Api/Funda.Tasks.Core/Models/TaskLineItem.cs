@@ -2,9 +2,10 @@
 
 namespace Funda.Tasks.Core
 {
-    public class TaskLine
+    public class TaskLineItem
     {
-        public TaskType TaskType { get; set; }
+        public Guid Id;
+        public TaskType Task { get; set; }
         public string Description { get; set; }
         public DateTimeOffset Timestamp { get; set; }
     }
