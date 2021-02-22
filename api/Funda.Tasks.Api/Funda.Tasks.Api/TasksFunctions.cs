@@ -28,13 +28,20 @@ namespace Funda.Tasks.Api
             [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "tasks")] HttpRequest req,
             CancellationToken token = default)
         {
-            _log.LogInformation("C# HTTP trigger function processed a request.");
+            try
+            {
+                _log.LogInformation("C# HTTP trigger function processed a request.");
 
-            var userId = new Guid("c54033a9-3dc3-472b-9008-cd4a4cae2a06");
+                var userId = new Guid("c54033a9-3dc3-472b-9008-cd4a4cae2a06");
 
-            var result = await _userTasks.GetUserTasksAsync(userId, token);
+                var result = await _userTasks.GetUserTasksAsync(userId, token);
 
-            return new JsonResult(result);
+                return new JsonResult(result);
+            } 
+            catch (Exception e)
+            {
+                return new JsonResult(e);
+            }
         }
 
 
