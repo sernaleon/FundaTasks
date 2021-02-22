@@ -18,15 +18,12 @@ namespace Funda.Tasks.Infrastructure.TableStorage
             };
             services.AddSingleton(apiConfig);
 
-            services.AddTransient<IUserMapper, UserMapper>();
             services.AddTransient<ITaskMapper, TaskMapper>();
             services.AddTransient<IUserTaskMapper, UserTaskMapper>();
 
-            services.AddTransient<IUser, UserRepository>();
             services.AddTransient<ITasks, TasksRepository>();
             services.AddTransient<IUserTasks, UserTasksRepository>();
 
-            services.AddDbContext<UserEntity>(TableNames.UsersTableName);
             services.AddDbContext<TaskEntity>(TableNames.TasksTableName);
             services.AddDbContext<UserTaskEntity>(TableNames.UserTasksTableName);
 

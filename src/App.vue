@@ -1,28 +1,39 @@
 <template>
-  <div>
-    <ul id="example-1">
-      <li v-for="item in tasks" :key="item.id">
-        {{ item.task.name }}
-        {{ item.description }}
-      </li>
-    </ul>
-  </div>
+  <v-app>
+    <v-app-bar app color="primary" dark>
+      <div class="d-flex align-center">
+        <h1>Funda Tasks</h1>
+      </div>
+
+      <v-spacer></v-spacer>
+
+      <button v-if="!isAuthenticated" @click="signIn()">Sign In</button>
+      <button v-if="isAuthenticated" @click="signOut()">Sign Out</button>
+    </v-app-bar>
+
+    <v-main>
+      <router-view />
+    </v-main>
+  </v-app>
 </template>
 
-<script>
-import axios from "axios";
-import configuration from "./configuration";
+<script lang="ts">
+import { Component, Vue, Prop } from "vue-property-decorator";
 
-export default {
-  name: "App",
-  data() {
-    return {
-      tasks: undefined,
-    };
-  },
-  created: async function () {
-    const response = await axios.get(`${configuration.apiBaseUrl}/api/tasks`);
-    this.tasks = response.data;
-  },
-};
+@Component
+export default class App extends Vue {
+  @Prop() private msg!: string;
+
+  public get isAuthenticated(): boolean {
+    return this.$msal.isAuthenticated;
+  }
+
+  public async signIn() {
+    await this.$msal.signIn();
+  }
+
+  public async signOut() {
+    await this.$msal.signOut();
+  }
+}
 </script>

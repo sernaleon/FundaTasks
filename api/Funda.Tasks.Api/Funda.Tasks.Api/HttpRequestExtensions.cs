@@ -7,7 +7,6 @@ namespace Funda.Tasks.Api
 {
     public static class HttpRequestExtensions
     {
-        //string name = req.Query["userId"];
         public async static Task<T> GetBodyAsync<T>(this HttpRequest req)
         {
             var requestBody = await new StreamReader(req.Body).ReadToEndAsync();

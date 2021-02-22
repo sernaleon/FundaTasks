@@ -1,6 +1,8 @@
 ﻿using System;
+using AzureFunctions.OidcAuthentication;
 using Funda.Tasks.Api;
 using Funda.Tasks.Infrastructure.TableStorage;
+using Funda.Tasks.Logic;
 using Microsoft.Azure.Functions.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 
@@ -16,6 +18,8 @@ namespace Funda.Tasks.Api
                .AddEnvironmentVariables()
                .Build();
 
+            builder.Services.AddOidcApiAuthorization();
+            builder.Services.AddFundaTasksLogic();
             builder.Services.AddFundaTasksTableStorage(config);
         }
     }

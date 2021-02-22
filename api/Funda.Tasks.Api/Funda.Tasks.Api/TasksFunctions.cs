@@ -7,6 +7,10 @@ using Microsoft.Extensions.Logging;
 using System.Threading;
 using Funda.Tasks.Core;
 using System;
+using AzureFunctions.OidcAuthentication;
+using System.Security.Claims;
+using System.Linq;
+using Funda.Tasks.Logic;
 
 namespace Funda.Tasks.Api
 {
@@ -14,13 +18,15 @@ namespace Funda.Tasks.Api
     {
         private readonly ILogger<TasksFunctions> _log;
         private readonly IUserTasks _userTasks;
-        private readonly ITasks _tasks;
+        private readonly INewTaskHandler _addTaskHandler;
+        private readonly IApiAuthentication _apiAuthentication;
 
-        public TasksFunctions(ILogger<TasksFunctions> log, IUserTasks userTasks, ITasks tasks)
+        public TasksFunctions(ILogger<TasksFunctions> log, IUserTasks userTasks, IApiAuthentication apiAuthentication, INewTaskHandler addTaskHandler)
         {
             _log = log;
             _userTasks = userTasks;
-            _tasks = tasks;
+            _apiAuthentication = apiAuthentication;
+            _addTaskHandler = addTaskHandler;
         }
 
         [FunctionName("TasksGet")]
@@ -30,9 +36,10 @@ namespace Funda.Tasks.Api
         {
             try
             {
-                _log.LogInformation("C# HTTP trigger function processed a request.");
+                var authResult = await _apiAuthentication.AuthenticateAsync(req.Headers);
+                if (authResult.Failed) return new UnauthorizedResult();
 
-                var userId = new Guid("c54033a9-3dc3-472b-9008-cd4a4cae2a06");
+                var userId = GetUserId(authResult.User);
 
                 var result = await _userTasks.GetUserTasksAsync(userId, token);
 
@@ -40,26 +47,40 @@ namespace Funda.Tasks.Api
             } 
             catch (Exception e)
             {
-                return new JsonResult(e);
+                _log.LogError(e.Message, e);
+
+                return new StatusCodeResult(500);
             }
         }
-
 
         [FunctionName("TasksAdd")]
         public async Task<IActionResult> TasksAdd(
             [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "tasks")] HttpRequest req,
             CancellationToken token = default)
         {
-            _log.LogInformation("C# HTTP trigger function processed a request.");
+            try
+            {
+                var authResult = await _apiAuthentication.AuthenticateAsync(req.Headers);
+                if (authResult.Failed) return new UnauthorizedResult();
 
-            var userId = new Guid("c54033a9-3dc3-472b-9008-cd4a4cae2a06");
+                var userId = GetUserId(authResult.User);
+                var newTask = await req.GetBodyAsync<NewTask>();
 
-            var taskLine = await req.GetBodyAsync<TaskLineItem>();
+                var result = await _addTaskHandler.AddTaskAsync(userId, newTask, token);
 
-            await _tasks.AddTaskAsync(userId, taskLine.Task, token);
-            await _userTasks.SetUserTasksAsync(userId, taskLine, token);
+                return new JsonResult(result);
+            }
+            catch (Exception e)
+            {
+                _log.LogError(e.Message, e);
 
-            return new OkResult();
+                return new StatusCodeResult(500);
+            }
+        }
+
+        private Guid GetUserId(ClaimsPrincipal user)
+        {
+            return new Guid(user.Claims.Single(x => x.Type == ClaimTypes.NameIdentifier).Value);
         }
     }
 }
