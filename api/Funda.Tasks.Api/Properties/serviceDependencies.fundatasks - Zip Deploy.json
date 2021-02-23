@@ -1,15 +1,15 @@
 {
   "dependencies": {
-    "storage1": {
-      "resourceId": "/subscriptions/[parameters('subscriptionId')]/resourceGroups/[parameters('resourceGroupName')]/providers/Microsoft.Storage/storageAccounts/fundatasksapistorage",
-      "type": "storage.azure",
-      "connectionId": "AzureWebJobsStorage",
-      "secretStore": "AzureAppSettings"
-    },
     "appInsights1": {
       "resourceId": "/subscriptions/[parameters('subscriptionId')]/resourceGroups/[parameters('resourceGroupName')]/providers/microsoft.insights/components/fundatasks",
       "type": "appInsights.azure",
       "connectionId": "APPINSIGHTS_CONNECTIONSTRING",
+      "secretStore": "AzureAppSettings"
+    },
+    "storage1": {
+      "resourceId": "/subscriptions/[parameters('subscriptionId')]/resourceGroups/[parameters('resourceGroupName')]/providers/Microsoft.Storage/storageAccounts/fundatasksapistorage",
+      "type": "storage.azure",
+      "connectionId": "AzureWebJobsStorage",
       "secretStore": "AzureAppSettings"
     }
   }
