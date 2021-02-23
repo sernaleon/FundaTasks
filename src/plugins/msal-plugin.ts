@@ -79,7 +79,6 @@ export class MsalPlugin implements PluginObject<MsalPluginOptions> {
         this.isAuthenticated = this.getIsAuthenticated();
     }
 
-
     public async signIn() {
         try {
             const loginRequest: msal.PopupRequest = {
@@ -87,9 +86,7 @@ export class MsalPlugin implements PluginObject<MsalPluginOptions> {
             };
             const loginResponse: msal.AuthenticationResult = await msalInstance.loginPopup(loginRequest);
             this.isAuthenticated = !!loginResponse.account;
-            // do something with this?
         } catch (err) {
-            // handle error
             if (err.errorMessage && err.errorMessage.indexOf("AADB2C90118") > -1) {
                 try {
                     const passwordResetResponse: msal.AuthenticationResult = await msalInstance.loginPopup({
@@ -103,7 +100,6 @@ export class MsalPlugin implements PluginObject<MsalPluginOptions> {
             } else {
                 this.isAuthenticated = false;
             }
-
         }
     }
 

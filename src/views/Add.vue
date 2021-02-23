@@ -35,8 +35,8 @@ import tasksApi, { NewTask, TaskLineItem } from "../api/tasks";
 export default class Add extends Vue {
 
    public task: NewTask = {
-     name: "Hacer cosas",
-     description: "Cosas nazis"
+     name: "",
+     description: ""
    };
    
    async addTask() {
