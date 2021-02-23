@@ -3,6 +3,7 @@ import App from './App.vue'
 import router from './router'
 import vuetify from './plugins/vuetify';
 import { MsalPlugin, MsalPluginOptions } from './plugins/msal-plugin';
+import axios from 'axios';
 
 Vue.config.productionTip = false;
 
@@ -13,6 +14,8 @@ const options: MsalPluginOptions = {
   knownAuthority: process.env.VUE_APP_MSAL_KNOWN_AUTHORITY,
   apiScope: process.env.VUE_APP_MSAL_API_SCOPE
 };
+
+axios.defaults.baseURL = process.env.VUE_APP_API_BASE_URL;
 
 Vue.use(new MsalPlugin(), options);
 
