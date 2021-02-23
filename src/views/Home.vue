@@ -97,10 +97,9 @@ export default class Home extends Vue {
   public dialog = false;
 
   async created() {
-    if (this.$msal.isAuthenticated === false) {
-      await this.$msal.signIn(); //POPUP IS BLOCKED. TRY WITH REDIRECT
+    if (this.$msal.isAuthenticated) {
+        await this.getTasksAsync();
     }
-    await this.getTasksAsync();
   }
 
   async getTasksAsync() {
