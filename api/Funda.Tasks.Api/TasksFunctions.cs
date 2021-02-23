@@ -37,7 +37,7 @@ namespace Funda.Tasks.Api
             try
             {
                 var authResult = await _apiAuthentication.AuthenticateAsync(req.Headers);
-                if (authResult.Failed) return new UnauthorizedResult();
+                if (authResult.Failed) return new JsonResult(authResult) { StatusCode = StatusCodes.Status401Unauthorized };
 
                 var userId = GetUserId(authResult.User);
 
@@ -49,7 +49,7 @@ namespace Funda.Tasks.Api
             {
                 _log.LogError(e.Message, e);
 
-                return new StatusCodeResult(500);
+                return new JsonResult(e) { StatusCode = StatusCodes.Status500InternalServerError };
             }
         }
 
@@ -77,6 +77,7 @@ namespace Funda.Tasks.Api
                 return new StatusCodeResult(500);
             }
         }
+
 
         private Guid GetUserId(ClaimsPrincipal user)
         {
