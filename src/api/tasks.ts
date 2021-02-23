@@ -14,7 +14,7 @@ export interface TaskLineItem {
 }
 
 export interface NewTask {
-    id?: string;
+    taskId?: string;
     name: string;
     description: string;
 }
@@ -31,7 +31,7 @@ class TasksApi {
             return [];
         }
     }
-    
+
     async addTaskAsync(item: NewTask): Promise<TaskLineItem[]> {
         try {
             console.log(item);
@@ -46,7 +46,7 @@ class TasksApi {
         }
     }
 
-    private async getAuthorisedConfigAsync(): Promise<AxiosRequestConfig>{
+    private async getAuthorisedConfigAsync(): Promise<AxiosRequestConfig> {
         const accessToken = await msalPluginInstance.acquireToken();
 
         const config = {
