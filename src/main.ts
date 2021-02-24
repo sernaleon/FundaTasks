@@ -1,6 +1,5 @@
 import Vue from 'vue'
 import App from './App.vue'
-import router from './router'
 import vuetify from './plugins/vuetify';
 import { MsalPlugin, MsalPluginOptions } from './plugins/msal-plugin';
 import axios from 'axios';
@@ -20,7 +19,6 @@ axios.defaults.baseURL = process.env.VUE_APP_API_BASE_URL;
 Vue.use(new MsalPlugin(), options);
 
 new Vue({
-  router,
   vuetify,
   render: h => h(App)
 }).$mount("#app");

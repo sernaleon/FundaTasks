@@ -21,22 +21,20 @@ namespace Funda.Tasks.Infrastructure.TableStorage
 
     public class DbContext<T> : IDbContext<T> where T : TableEntity, new()
     {
-        private readonly string _tableName;
-        private readonly string _connectionString;
+        private readonly DbContextSettings _settings;
         private readonly ILogger<T> _logger;
 
-        public DbContext(AzureSettings settings, ILogger<T> logger, string tableName)
+        public DbContext(DbContextSettings settings, ILogger<T> logger)
         {
-            _connectionString = settings.StorageConectionString;
+            _settings = settings;
             _logger = logger;
-            _tableName = tableName;
         }
 
         public async Task<T> GetAsync(string partitionKey, string rowKey, CancellationToken token)
         {
             try
             {
-                var table = CloudTableHelper.GetCloudTable(_connectionString, _tableName);
+                var table = GetCloudTable(_settings.StorageConectionString, _settings.TableName);
                 var operation = TableOperation.Retrieve<T>(partitionKey, rowKey);
                 var tableResult = await table.ExecuteAsync(operation, token);
                 return tableResult?.Result as T;
@@ -53,7 +51,7 @@ namespace Funda.Tasks.Infrastructure.TableStorage
             try
             {
                 userTasksEntity.ETag = "*";
-                var table = CloudTableHelper.GetCloudTable(_connectionString, _tableName);
+                var table = GetCloudTable(_settings.StorageConectionString, _settings.TableName);
                 var operation = TableOperation.InsertOrMerge(userTasksEntity);
                 await table.ExecuteAsync(operation, token);
             }
@@ -69,7 +67,7 @@ namespace Funda.Tasks.Infrastructure.TableStorage
             try
             {
                 userTasksEntity.ETag = "*";
-                var table = CloudTableHelper.GetCloudTable(_connectionString, _tableName);
+                var table = GetCloudTable(_settings.StorageConectionString, _settings.TableName);
                 var operation = TableOperation.Delete(userTasksEntity);
                 await table.ExecuteAsync(operation, token);
             }
@@ -84,9 +82,9 @@ namespace Funda.Tasks.Infrastructure.TableStorage
         {
             try
             {
-                var table = CloudTableHelper.GetCloudTable(_connectionString, _tableName);
+                var table = GetCloudTable(_settings.StorageConectionString, _settings.TableName);
                 var query = table.CreateQuery<T>();
-                var tableResult = await table.ExecuteQueryAsync(query, token);
+                var tableResult = await ExecuteQueryAsync(table, query, token);
                 return tableResult;
             }
             catch (Exception e)
@@ -100,9 +98,9 @@ namespace Funda.Tasks.Infrastructure.TableStorage
         {
             try
             {
-                var table = CloudTableHelper.GetCloudTable(_connectionString, _tableName);
+                var table = GetCloudTable(_settings.StorageConectionString, _settings.TableName);
                 var query = table.CreateQuery<T>().Where(wherePredicate).AsTableQuery();
-                var tableResult = await table.ExecuteQueryAsync(query, token);
+                var tableResult = await ExecuteQueryAsync(table, query, token);
                 return tableResult;
             }
             catch (Exception e)
@@ -110,6 +108,30 @@ namespace Funda.Tasks.Infrastructure.TableStorage
                 _logger.LogError($"Error getting all {nameof(T)}", e);
                 throw;
             }
+        }
+
+        private static CloudTable GetCloudTable(string connectionString, string tableName)
+        {
+            var storageAccount = CloudStorageAccount.Parse(connectionString);
+            var tableClient = storageAccount.CreateCloudTableClient(new TableClientConfiguration());
+            return tableClient.GetTableReference(tableName);
+        }
+
+        private static async Task<List<T>> ExecuteQueryAsync(CloudTable table, TableQuery<T> query, CancellationToken ct = default, Action<IList<T>> onProgress = null)
+        {
+            var items = new List<T>();
+            TableContinuationToken token = null;
+
+            do
+            {
+                var seg = await table.ExecuteQuerySegmentedAsync(query, token);
+                token = seg.ContinuationToken;
+                items.AddRange(seg);
+                onProgress?.Invoke(items);
+
+            } while (token != null && !ct.IsCancellationRequested);
+
+            return items;
         }
     }
 }

@@ -1,6 +1,4 @@
 ﻿using Funda.Tasks.Core;
-using Funda.Tasks.Infrastructure.TableStorage.Mappers;
-using Funda.Tasks.Infrastructure.TableStorage.Repositories;
 using Microsoft.Azure.Cosmos.Table;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,34 +10,20 @@ namespace Funda.Tasks.Infrastructure.TableStorage
     {
         public static IServiceCollection AddFundaTasksTableStorage(this IServiceCollection services, IConfiguration configuration)
         {
-            var apiConfig = new AzureSettings
-            {
-                StorageConectionString = configuration["AzureWebJobsStorage"]
-            };
-            services.AddSingleton(apiConfig);
-
             services.AddTransient<ITaskMapper, TaskMapper>();
-            services.AddTransient<IUserTaskMapper, UserTaskMapper>();
-
-            services.AddTransient<ITasks, TasksRepository>();
-            services.AddTransient<IUserTasks, UserTasksRepository>();
-
-            services.AddDbContext<TaskEntity>(TableNames.TasksTableName);
-            services.AddDbContext<UserTaskEntity>(TableNames.UserTasksTableName);
+            services.AddTransient<ITaskRepository, TaskRepository>();
+            services.AddDbContext<TaskEntity>(new DbContextSettings
+            {
+                StorageConectionString = configuration["AzureWebJobsStorage"],
+                TableName = "tasks"
+            });
 
             return services;
         }
 
-        private static IServiceCollection AddDbContext<T>(this IServiceCollection services, string tablename) where T:TableEntity, new()
+        private static IServiceCollection AddDbContext<T>(this IServiceCollection services, DbContextSettings settings) where T:TableEntity, new()
         {
-            services.AddTransient<IDbContext<T>, DbContext<T>>(
-                   x => new DbContext<T>(
-                           x.GetService<AzureSettings>(),
-                           x.GetService<ILogger<T>>(),
-                           tablename)
-                   );
-
-            return services;
+            return services.AddTransient<IDbContext<T>, DbContext<T>>( x => new DbContext<T>(settings,x.GetService<ILogger<T>>()));
         }
     }
 }

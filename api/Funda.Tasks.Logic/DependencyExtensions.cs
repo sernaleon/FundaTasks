@@ -6,8 +6,7 @@ namespace Funda.Tasks.Logic
     {
         public static IServiceCollection AddFundaTasksLogic(this IServiceCollection services)
         {
-            services.AddTransient<INewTaskHandler, NewTaskHandler>();
-            return services;
+            return services.AddTransient<ITaskService, TaskService>();
         }
     }
 }

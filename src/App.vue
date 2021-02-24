@@ -12,17 +12,19 @@
     </v-app-bar>
 
     <v-main>
-      <router-view />
+      <Home />
     </v-main>
   </v-app>
 </template>
 
 <script lang="ts">
-import { Component, Vue, Prop } from "vue-property-decorator";
+import { Component, Vue, Prop, Emit } from "vue-property-decorator";
+import Home from './views/Home.vue'
 
-@Component
+@Component({
+  components: { Home },
+})
 export default class App extends Vue {
-  @Prop() private msg!: string;
 
   public get isAuthenticated(): boolean {
     return this.$msal.isAuthenticated;

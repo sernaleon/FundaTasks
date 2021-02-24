@@ -1,10 +1,10 @@
 ﻿using System;
 
-namespace Funda.Tasks.Logic
+namespace Funda.Tasks.Core.Models
 {
-    public class NewTask
+    public class NewTaskModel
     {
-        public Guid? TaskId { get; set; }
+        public Guid? GroupId { get; set; }
         public string Name { get; set; }
         public string Description { get; set; }
     }

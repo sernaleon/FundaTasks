@@ -1,26 +1,30 @@
 import { msalPluginInstance } from "@/plugins/msal-plugin";
 import axios, { AxiosRequestConfig } from "axios";
 
-export interface TaskType {
+export interface Task {
     id: string;
+    groupId: string;
     name: string;
-}
-
-export interface TaskLineItem {
-    id: string;
-    task: TaskType;
     description: string;
-    timestamp: string;
+    timestamp: Date;
 }
 
 export interface NewTask {
-    taskId?: string;
+    groupId?: string;
     name: string;
     description: string;
 }
 
+export interface UpdateTask {
+    id: string;
+    groupId: string;
+    name: string;
+    description: string;
+}
+
+
 class TasksApi {
-    async getTasksAsync(): Promise<TaskLineItem[]> {
+    async get(): Promise<Task[]> {
         try {
             const config = await this.getAuthorisedConfigAsync();
             const response = await axios.get('/api/tasks', config);
@@ -32,14 +36,36 @@ class TasksApi {
         }
     }
 
-    async addTaskAsync(item: NewTask): Promise<TaskLineItem[]> {
+    async add(item: NewTask): Promise<Task[]> {
         try {
-            console.log(item);
             const config = await this.getAuthorisedConfigAsync();
             const response = await axios.post('/api/tasks', item, config);
 
             return response.data;
+        } catch (e) {
+            console.error(e);
+            return [];
+        }
+    }
 
+    async update(item: NewTask): Promise<Task[]> {
+        try {
+            const config = await this.getAuthorisedConfigAsync();
+            const response = await axios.put('/api/tasks', item, config);
+
+            return response.data;
+        } catch (e) {
+            console.error(e);
+            return [];
+        }
+    }
+
+    async delete(id: string): Promise<Task[]> {
+        try {
+            const config = await this.getAuthorisedConfigAsync();
+            const response = await axios.put('/api/tasks', id, config);
+
+            return response.data;
         } catch (e) {
             console.error(e);
             return [];

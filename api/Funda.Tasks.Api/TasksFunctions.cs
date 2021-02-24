@@ -10,23 +10,21 @@ using System;
 using AzureFunctions.OidcAuthentication;
 using System.Security.Claims;
 using System.Linq;
-using Funda.Tasks.Logic;
+using Funda.Tasks.Core.Models;
 
 namespace Funda.Tasks.Api
 {
     public class TasksFunctions
     {
         private readonly ILogger<TasksFunctions> _log;
-        private readonly IUserTasks _userTasks;
-        private readonly INewTaskHandler _addTaskHandler;
+        private readonly ITaskRepository _task;
         private readonly IApiAuthentication _apiAuthentication;
 
-        public TasksFunctions(ILogger<TasksFunctions> log, IUserTasks userTasks, IApiAuthentication apiAuthentication, INewTaskHandler addTaskHandler)
+        public TasksFunctions(ILogger<TasksFunctions> log, ITaskRepository task, IApiAuthentication apiAuthentication)
         {
             _log = log;
-            _userTasks = userTasks;
+            _task = task;
             _apiAuthentication = apiAuthentication;
-            _addTaskHandler = addTaskHandler;
         }
 
         [FunctionName("TasksGet")]
@@ -34,23 +32,7 @@ namespace Funda.Tasks.Api
             [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "tasks")] HttpRequest req,
             CancellationToken token = default)
         {
-            try
-            {
-                var authResult = await _apiAuthentication.AuthenticateAsync(req.Headers);
-                if (authResult.Failed) return new JsonResult(authResult) { StatusCode = StatusCodes.Status401Unauthorized };
-
-                var userId = GetUserId(authResult.User);
-
-                var result = await _userTasks.GetUserTasksAsync(userId, token);
-
-                return new JsonResult(result);
-            } 
-            catch (Exception e)
-            {
-                _log.LogError(e.Message, e);
-
-                return new JsonResult(e) { StatusCode = StatusCodes.Status500InternalServerError };
-            }
+            return await ExecuteTaskFunctionAsync(req, token);
         }
 
         [FunctionName("TasksAdd")]
@@ -58,15 +40,53 @@ namespace Funda.Tasks.Api
             [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "tasks")] HttpRequest req,
             CancellationToken token = default)
         {
+            return await ExecuteTaskFunctionAsync(req, token, async (Guid userId) =>
+            {
+                var newTask = await req.GetBodyAsync<NewTaskModel>();
+                await _task.SetAsync(userId, newTask, token);
+            });
+        }
+
+        [FunctionName("TasksUpdate")]
+        public async Task<IActionResult> TasksUpdate(
+            [HttpTrigger(AuthorizationLevel.Anonymous, "put", Route = "tasks")] HttpRequest req,
+            CancellationToken token = default)
+        {
+            return await ExecuteTaskFunctionAsync(req, token, async (Guid userId) =>
+            {
+                var updateTask = await req.GetBodyAsync<UpdateTaskModel>();
+                await _task.SetAsync(userId, updateTask, token);
+            });
+        }
+
+        [FunctionName("TasksDelete")]
+        public async Task<IActionResult> TasksDelete(
+            [HttpTrigger(AuthorizationLevel.Anonymous, "delete", Route = "tasks")] HttpRequest req,
+            CancellationToken token = default)
+        {
+            return await ExecuteTaskFunctionAsync(req, token, async (Guid userId) =>
+            {
+                var taskId = await req.GetBodyAsync<Guid>();
+                await _task.DeleteAsync(userId, taskId, token);
+            });
+        }
+
+
+        private async Task<JsonResult> ExecuteTaskFunctionAsync(HttpRequest req, CancellationToken token, Func<Guid, Task> actionAsync = null)
+        {
             try
             {
                 var authResult = await _apiAuthentication.AuthenticateAsync(req.Headers);
-                if (authResult.Failed) return new UnauthorizedResult();
+                if (authResult.Failed) return new JsonResult(authResult) { StatusCode = StatusCodes.Status401Unauthorized };
 
-                var userId = GetUserId(authResult.User);
-                var newTask = await req.GetBodyAsync<NewTask>();
+                var userId = new Guid(authResult.User.Claims.Single(x => x.Type == ClaimTypes.NameIdentifier).Value);
 
-                var result = await _addTaskHandler.AddTaskAsync(userId, newTask, token);
+                if (actionAsync != null)
+                {
+                    await actionAsync(userId);
+                }
+
+                var result = await _task.GetAllAsync(userId, token);
 
                 return new JsonResult(result);
             }
@@ -74,14 +94,8 @@ namespace Funda.Tasks.Api
             {
                 _log.LogError(e.Message, e);
 
-                return new StatusCodeResult(500);
+                return new JsonResult(e) { StatusCode = StatusCodes.Status500InternalServerError };
             }
-        }
-
-
-        private Guid GetUserId(ClaimsPrincipal user)
-        {
-            return new Guid(user.Claims.Single(x => x.Type == ClaimTypes.NameIdentifier).Value);
         }
     }
 }
