@@ -63,7 +63,7 @@ class TasksApi {
     async delete(id: string): Promise<Task[]> {
         try {
             const config = await this.getAuthorisedConfigAsync();
-            const response = await axios.put('/api/tasks', id, config);
+            const response = await axios.delete(`/api/tasks/${id}`, config);
 
             return response.data;
         } catch (e) {

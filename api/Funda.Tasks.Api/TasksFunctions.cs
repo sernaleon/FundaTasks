@@ -61,13 +61,13 @@ namespace Funda.Tasks.Api
 
         [FunctionName("TasksDelete")]
         public async Task<IActionResult> TasksDelete(
-            [HttpTrigger(AuthorizationLevel.Anonymous, "delete", Route = "tasks")] HttpRequest req,
+            [HttpTrigger(AuthorizationLevel.Anonymous, "delete", Route = "tasks/{taskId}")] HttpRequest req,
+            string taskId,
             CancellationToken token = default)
         {
             return await ExecuteTaskFunctionAsync(req, token, async (Guid userId) =>
             {
-                var taskId = await req.GetBodyAsync<Guid>();
-                await _task.DeleteAsync(userId, taskId, token);
+                await _task.DeleteAsync(userId, new Guid(taskId), token);
             });
         }
 

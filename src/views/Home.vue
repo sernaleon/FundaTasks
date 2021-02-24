@@ -54,7 +54,9 @@
                   <v-btn color="blue darken-1" text @click="closeNewTask">
                     Cancel
                   </v-btn>
-                  <v-btn color="blue darken-1" text @click="saveNewTask"> Save </v-btn>
+                  <v-btn color="blue darken-1" text @click="saveNewTask">
+                    Save
+                  </v-btn>
                 </v-card-actions>
               </v-card>
             </v-dialog>
@@ -89,16 +91,40 @@
                   <v-btn color="blue darken-1" text @click="closeUpdateTask">
                     Cancel
                   </v-btn>
-                  <v-btn color="blue darken-1" text @click="saveUpdateTask"> Save </v-btn>
+                  <v-btn color="blue darken-1" text @click="saveUpdateTask">
+                    Save
+                  </v-btn>
+                </v-card-actions>
+              </v-card>
+            </v-dialog>
+            <v-dialog v-model="displayDeleteTaskDialog" max-width="500px">
+              <v-card>
+                <v-card-title>
+                  <span class="headline">Delete?</span>
+                </v-card-title>
+                <v-card-actions>
+                  <v-spacer></v-spacer>
+                  <v-btn color="blue darken-1" text @click="closeDeleteTask">
+                    Cancel
+                  </v-btn>
+                  <v-btn color="blue darken-1" text @click="saveDeleteTask">
+                    DELETE
+                  </v-btn>
                 </v-card-actions>
               </v-card>
             </v-dialog>
           </v-toolbar>
         </template>
         <template v-slot:[`item.actions`]="{ item }">
-          <v-icon small class="mr-2" @click="openNewTaskDialog(item)"> mdi-plus </v-icon>
-          <v-icon small class="mr-2" @click="openUpdateTaskDialog(item)"> mdi-pencil </v-icon>
-          <v-icon small @click="openDeleteTaskDialog(item)"> mdi-delete </v-icon>
+          <v-icon small class="mr-2" @click="openNewTaskDialog(item)">
+            mdi-plus
+          </v-icon>
+          <v-icon small class="mr-2" @click="openUpdateTaskDialog(item)">
+            mdi-pencil
+          </v-icon>
+          <v-icon small @click="openDeleteTaskDialog(item)">
+            mdi-delete
+          </v-icon>
         </template>
         <template v-slot:no-data> </template>
       </v-data-table>
@@ -114,7 +140,6 @@ import tasksApi, { NewTask, Task, UpdateTask } from "../api/tasks";
   components: {},
 })
 export default class Home extends Vue {
-  
   public headers = [
     {
       text: "Name",
@@ -127,7 +152,7 @@ export default class Home extends Vue {
   ];
 
   public tasks: Task[] = [];
-  
+
   async created() {
     await this.getTasksAsync();
   }
@@ -174,19 +199,19 @@ export default class Home extends Vue {
   //Update item dialog
   public displayUpdateTaskDialog = false;
   public updateTask: UpdateTask = {
-    id:"",
-    groupId:"",
+    id: "",
+    groupId: "",
     name: "",
     description: "",
   };
   public defaultUpdateTask: UpdateTask = {
-    id:"",
-    groupId:"",
+    id: "",
+    groupId: "",
     name: "",
     description: "",
   };
   openUpdateTaskDialog(item: Task) {
-    this.updateTask.id = item.id,
+    this.updateTask.id = item.id;
     this.updateTask.groupId = item.groupId;
     this.updateTask.name = item.name;
     this.updateTask.description = item.description;
@@ -202,6 +227,22 @@ export default class Home extends Vue {
     this.newTask = Object.assign({}, this.defaultUpdateTask);
   }
 
-
+  //Delete item dialog
+  public displayDeleteTaskDialog = false;
+  public deleteTaskId = "";
+  openDeleteTaskDialog(item: Task) {
+    this.deleteTaskId = item.id;
+    this.displayDeleteTaskDialog = true;
+  }
+  async saveDeleteTask() {
+    console.log('saveDeleteTask', this.deleteTaskId, this.displayDeleteTaskDialog);
+    this.tasks = await tasksApi.delete(this.deleteTaskId);
+    await this.closeDeleteTask();
+  }
+  async closeDeleteTask() {
+    this.displayDeleteTaskDialog = false;
+    await Vue.nextTick();
+    this.deleteTaskId = "";
+  }
 }
 </script>
